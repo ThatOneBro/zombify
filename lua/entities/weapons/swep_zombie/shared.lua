@@ -30,9 +30,9 @@ SWEP.Secondary.DefaultClip = 0
 SWEP.Secondary.Automatic = false
 SWEP.Secondary.Ammo = ""
 
---local swing_sound = Sound()
---local hit_sound = Sound()
---local zombie_moan = Sound()
+--local swing_sound = Sound( )
+--local hit_sound = Sound( )
+--local zombie_moan = Sound( )
 
 function SWEP:Initialize( )
     self:SetHoldType( "fist" )
