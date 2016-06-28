@@ -3,9 +3,9 @@
 	"name"				"Zombify"
 	"version"			"0.0.1"
 	"up_date"			"00/00/00"
-	"author_name"			"ThatOneBrah"
-	"author_email"			"derrick.c.farris@gmail.com"
-	"author_url"			"www.derrickfarris.com"
+	"author_name"		"ThatOneBrah"
+	"author_email"		"derrick.c.farris@gmail.com"
+	"author_url"		"www.derrickfarris.com"
 	"info"				"An addon to add zombification to DarkRP!"
 	"override"			"0"
 }
