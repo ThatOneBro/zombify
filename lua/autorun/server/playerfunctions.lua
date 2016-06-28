@@ -2,9 +2,13 @@ local meta = FindMetaTable( "Player" )
 
 
 function meta:AddZombieTremors( )
+	net.Start( "StartZombieTremors" )
+	net.Send( self )
 end
 
 function meta:RemoveZombieTremors( )
+	net.Start( "StopZombieTremors" )
+	net.Send( self )
 end
 
 function meta:DeZombify( )
