@@ -35,6 +35,8 @@ SWEP.Secondary.Ammo = ""
 --local hit_sound = Sound( )
 local zombie_moan = Sound( "npc/zombie/zombie_pain2.wav" )
 
+local attack_distance = 54
+
 function SWEP:Initialize( )
     self:SetHoldType( "fist" )
 end
@@ -44,10 +46,11 @@ function SWEP:Holster( )
 end
 
 function SWEP:PrimaryAttack( )
-	local target = self:GetOwner( ):GetEyeTrace( ).Entity
+	local owner = self:GetOwner( )
+	local target = owner:GetEyeTrace( ).Entity
 	
-	if not IsValid( target ) or not target:IsPlayer( ) then return end
-
+	if not IsValid( target ) or not target:IsPlayer( ) or target:GetPos( ):Distance( owner:GetPos( ) ) > attack_distance then return end
+		
 	if SERVER then
 		local target_job = target:Team( )
 		if target_job == TEAM_INFECTED or target_job == TEAM_ZOMBIE then return end
