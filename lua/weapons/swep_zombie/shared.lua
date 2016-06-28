@@ -18,21 +18,22 @@ SWEP.Category = "DarkRP (SWEP)"
 SWEP.Spawnable = true
 SWEP.AdminOnly = true
 
+SWEP.ViewModel = Model( "models/weapons/v_zombiearms.mdl" )
 SWEP.WorldModel = ""
 
 SWEP.Primary.ClipSize = -1
-SWEP.Primary.DefaultClip = 0
+SWEP.Primary.DefaultClip = -1
 SWEP.Primary.Automatic = false
 SWEP.Primary.Ammo = ""
 
 SWEP.Secondary.ClipSize = -1
-SWEP.Secondary.DefaultClip = 0
+SWEP.Secondary.DefaultClip = -1
 SWEP.Secondary.Automatic = false
 SWEP.Secondary.Ammo = ""
 
 --local swing_sound = Sound( )
 --local hit_sound = Sound( )
---local zombie_moan = Sound( )
+local zombie_moan = Sound( "npc/zombie/zombie_pain2.wav" )
 
 function SWEP:Initialize( )
     self:SetHoldType( "fist" )
@@ -43,25 +44,42 @@ function SWEP:Holster( )
 end
 
 function SWEP:PrimaryAttack( )
-	local target = self:GetOwner( ):GetEyeTrace( )
+	local target = self:GetOwner( ):GetEyeTrace( ).Entity
 	
 	if not IsValid( target ) or not target:IsPlayer( ) then return end
 
 	if SERVER then
-		local target_job = target:getDarkRPVar( "jobs" )
+		local target_job = target:Team( )
 		if target_job == TEAM_INFECTED or target_job == TEAM_ZOMBIE then return end
 		
 		local infection = math.random( 8 )
 		if infection ~= 3 then return end
 		
-		target.changeTeam( TEAM_INFECTED, true )
+		target:setSelfDarkRPVar( "zombifyLastJob", target_job )
+		target:setSelfDarkRPVar( "zombifyIsInfected", true )
+		target:changeTeam( TEAM_INFECTED, true )
 	end
 end
 
 function SWEP:SecondaryAttack( )
-	self:PrimaryAttack( )
+	self:ZombieMoan( )
 end
 
-function SWEP:OnDrop( )
-	self:Remove( )
+function SWEP:ZombieMoan( )
+	local lply = self:GetOwner( )
+	
+	if lply:getDarkRPVar( "zombifyNextMoanTime" ) and lply:getDarkRPVar( "zombifyNextMoanTime" ) > CurTime( ) then return end
+	
+	if SERVER then
+		local next_moan = CurTime( ) + 5
+		lply:setSelfDarkRPVar( "zombifyNextMoanTime", next_moan )
+		lply:EmitSound( zombie_moan )
+	end	
+end
+
+function SWEP:Reload( )
+	local lply = self:GetOwner( )
+	if SERVER then
+		lply:setSelfDarkRPVar( "zombifyIsInfected", true )
+	end
 end
