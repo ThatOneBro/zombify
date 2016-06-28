@@ -1,9 +1,11 @@
 local meta = FindMetaTable( "Player" )
 
-function meta:RemoveZombieTremors( )
 
+function meta:AddZombieTremors( )
 end
 
+function meta:RemoveZombieTremors( )
+end
 
 function meta:DeZombify( )
 	if not IsValid( self ) or not self:getDarkRPVar( "zombifyIsInfected" ) then return end
