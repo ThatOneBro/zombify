@@ -31,14 +31,70 @@ SWEP.Secondary.DefaultClip = -1
 SWEP.Secondary.Automatic = false
 SWEP.Secondary.Ammo = ""
 
---local swing_sound = Sound( )
---local hit_sound = Sound( )
+self:NetworkVar( "Float", 0, "IdleAnim" )
+self:NetworkVar( "Float", 0, "AttackEndTime" )
+self:NetworkVar( "Float", 1, "NextAttackAnim" )
+self:NetworkVar( "Bool", 0, "AltAnim" )
+
+local attack_sound = Sound( "npc/zombie/zo_attack1.wav" )
+local hit_sound = Sound( "npc/zombie/claw_strike2.wav" )
 local zombie_moan = Sound( "npc/zombie/zombie_pain2.wav" )
 
-local attack_distance = 54
+local draw_delay = 1.2
+local attack_range = 54
+local attack_damage = 10
+local attack_delay = 0.74
+local moan_delay = 5
 
 function SWEP:Initialize( )
     self:SetHoldType( "fist" )
+end
+
+function SWEP:PlayHitSound( )
+	self:GetOwner( ):EmitSound( hit_sound )
+end
+
+function SWEP:PlayAttackSound( )
+	self:GetOwner( ):EmitSound( attack_sound )
+end
+
+function SWEP:CheckIdleAnim( )
+	local idleAnim = self:GetIdleAnim( )
+	if idleAnim and idleAnim <= CurTime( ) then
+		self:SetIdleAnim( nil )
+		self:SendWeaponAnim( ACT_VM_IDLE )
+	end
+end
+
+function SWEP:CheckAttackAnim( )
+	local next_attack = self:GetNextAttackAnim( )
+	if next_attack and next_attack <= CurTime( ) then
+		self:SetNextAttackAnim( nil )
+		self:SendAttackAnim( )
+	end
+end
+
+function SWEP:CheckAttacking( )
+	local attack_end = self:GetAttackEndTime( )
+	if attack_end == 0 or attack_end > CurTime( ) then return end
+	self:SetAttackEndTime( 0 )
+
+	if SERVER then
+		self:CheckHit( )
+	end
+end
+
+function SWEP:Think( )
+	self:CheckIdleAnim( )
+	self:CheckAttackAnim( )
+	self:CheckAttacking( )
+end
+
+function SWEP:Deploy( )
+	local theTime = CurTime( )
+	self:SetIdleAnim( theTime + self:SequenceDuration( ) )
+	self:SetNextPrimaryAttack( theTime + draw_delay )
+	return true
 end
 
 function SWEP:Holster( )
@@ -46,38 +102,76 @@ function SWEP:Holster( )
 end
 
 function SWEP:PrimaryAttack( )
-	local owner = self:GetOwner( )
-	local target = owner:GetEyeTrace( ).Entity
+	local theTime = CurTime( )
+	if self:GetNextPrimaryFire( ) > theTime then return end
 	
-	if not IsValid( target ) or not target:IsPlayer( ) or target:GetPos( ):Distance( owner:GetPos( ) ) > attack_distance then return end
-		
+	self:SetNextPrimaryFire( theTime + attack_delay )
+	self:Attack( )
+end
+
+function SWEP:Attack( )
+	self:SendAttackAnim( )
+	
+	local owner = self:GetOwner( )
+	owner:DoAttackEvent( )
+	
 	if SERVER then
-		local target_job = target:Team( )
-		if target_job == TEAM_INFECTED or target_job == TEAM_ZOMBIE then return end
-		
-		local infection = math.random( 8 )
-		if infection ~= 3 then return end
-		
-		target:setSelfDarkRPVar( "zombifyLastJob", target_job )
-		target:setSelfDarkRPVar( "zombifyIsInfected", true )
-		target:changeTeam( TEAM_INFECTED, true )
+		self:PlayAttackSound( )
 	end
 end
 
+function SWEP:CheckHit( )
+	local owner = self:GetOwner( )
+	local target = owner:GetEyeTrace( ).Entity
+	if not IsValid( target ) or not target:IsPlayer( ) or target:GetPos( ):Distance( owner:GetPos( ) ) > attack_range then return end
+	
+	if SERVER then
+		target:TakeDamage( attack_damage, owner, self )
+		self:PlayHitSound( )
+		self:InfectTarget( target )
+	end
+end
+
+function SWEP:InfectTarget( target )
+	if CLIENT then return end
+	
+	local owner = self:GetOwner( )
+	
+	local target_job = target:Team( )
+	if target_job == TEAM_INFECTED or target_job == TEAM_ZOMBIE then return end
+	
+	local infection = math.random( 8 )
+	if infection ~= 3 then return end
+	
+	target:setSelfDarkRPVar( "zombifyLastJob", target_job )
+	target:setSelfDarkRPVar( "zombifyIsInfected", true )
+	target:changeTeam( TEAM_INFECTED, true )
+end
+
+function SWEP:SendAttackAnim( )
+	local altAnim = self:GetAltAnim( )
+	
+	if altAnim then
+		self:SendWeaponAnim( ACT_VM_HITCENTER )
+	else
+		self:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
+	end
+	self:SetAltAnim = not altAnim
+end
+
 function SWEP:SecondaryAttack( )
+	if CLIENT then return end
 	self:ZombieMoan( )
 end
 
 function SWEP:ZombieMoan( )
+	local theTime = CurTime( )
+	
+	if self:GetNextSecondaryFire( ) > theTime then return end
 	local lply = self:GetOwner( )
 	
-	if lply:getDarkRPVar( "zombifyNextMoanTime" ) and lply:getDarkRPVar( "zombifyNextMoanTime" ) > CurTime( ) then return end
-	
-	if SERVER then
-		local next_moan = CurTime( ) + 5
-		lply:setSelfDarkRPVar( "zombifyNextMoanTime", next_moan )
-		lply:EmitSound( zombie_moan )
-	end	
+	self:SetNextSecondaryFire( theTime + moan_delay )
+	lply:EmitSound( zombie_moan )
 end
 
 function SWEP:Reload( )
@@ -85,4 +179,9 @@ function SWEP:Reload( )
 	if SERVER then
 		lply:setSelfDarkRPVar( "zombifyIsInfected", true )
 	end
+end
+
+function SWEP:DrawHUD( )
+	if SERVER then return end
+	self:DrawCrosshairDot( )
 end
