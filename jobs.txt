@@ -1,4 +1,4 @@
-Add these jobs to your jobs.lua inside of the darkrpmodification/lua/darkrp_customthings folder! 
+/Add these jobs to your jobs.lua inside of the darkrpmodification/lua/darkrp_customthings folder! 
 Feel free to change the colors and models of the jobs but be careful with the special functions dealing with the job classes!
 
 TEAM_ZOMBIE = DarkRP.createJob( "Zombie", {
@@ -16,7 +16,7 @@ TEAM_ZOMBIE = DarkRP.createJob( "Zombie", {
     vote = false,
     hasLicense = false,
     candemote = false,
-	OnPlayerChangedTeam = function( ply, oldTeam, newTeam ) ply:AddZombieTremors( ) end,
+	OnPlayerChangedTeam = function( ply, oldTeam, newTeam ) if SERVER then return end ply:StartZombieTremors( newTeam ) end,
     category = "Other"
 })
 
@@ -37,7 +37,7 @@ TEAM_INFECTED = DarkRP.createJob( "Zombie", {
     candemote = false,
 	customCheck = function( ply ) return ply:getDarkRPVar( "zombifyIsInfected" ) end,
 	CustomCheckFailMsg = "You are not Infected!",
-	OnPlayerChangedTeam = function( ply, oldTeam, newTeam ) ply:AddZombieTremors( ) end,
+	OnPlayerChangedTeam = function( ply, oldTeam, newTeam ) if SERVER then return end ply:StartZombieTremors( newTeam ) end,
 	PlayerDeath = function( ply, weapon, killer ) ply:DeZombify( ) end,
     category = "Infected"
 })
