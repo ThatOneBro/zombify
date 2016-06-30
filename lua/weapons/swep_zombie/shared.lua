@@ -124,7 +124,10 @@ function SWEP:Attack( )
 	local vm = owner:GetViewModel( )
 	
 	owner:DoAttackEvent( )
-	self:SetIdleAnim( CurTime( ) + vm:SequenceDuration( ) )
+	
+	local attack_end = CurTime( ) + vm:SequenceDuration( )
+	self:SetIdleAnim( attack_end )
+	self:SetAttackEndTime( attack_end )
 	
 	if SERVER then
 		self:PlayAttackSound( )
@@ -134,7 +137,11 @@ end
 function SWEP:CheckHit( )
 	local owner = self:GetOwner( )
 	local target = owner:GetEyeTrace( ).Entity
-	if not IsValid( target ) or not target:IsPlayer( ) or target:GetPos( ):Distance( owner:GetPos( ) ) > attack_range then return end
+	local target_distance = target:GetPos( ):Distance( owner:GetPos( ) )
+	
+	print(target_distance)
+	
+	if not IsValid( target ) or not target:IsPlayer( ) or target_distance > attack_range then return end
 	
 	if SERVER then
 		target:TakeDamage( attack_damage, owner, self )
