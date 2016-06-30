@@ -47,8 +47,8 @@ end
 
 function SWEP:SetupDataTables( )
 	self:NetworkVar( "Float", 0, "IdleAnim" )
-	self:NetworkVar( "Float", 0, "AttackEndTime" )
-	self:NetworkVar( "Float", 1, "NextAttackAnim" )
+	self:NetworkVar( "Float", 1, "AttackEndTime" )
+	self:NetworkVar( "Float", 2, "NextAttackAnim" )
 	self:NetworkVar( "Bool", 0, "AltAnim" )
 end
 
@@ -83,13 +83,13 @@ function SWEP:CheckAttackAnim( )
 end
 
 function SWEP:CheckAttacking( )
+	if CLIENT then return end
+	
 	local attack_end = self:GetAttackEndTime( )
-	if attack_end == 0 or attack_end > CurTime( ) then return end
+	if attack_end == 0 or CurTime( ) < attack_end then return end
+	
+	self:CheckHit( )
 	self:SetAttackEndTime( 0 )
-
-	if SERVER then
-		self:CheckHit( )
-	end
 end
 
 function SWEP:Think( )
@@ -125,29 +125,28 @@ function SWEP:Attack( )
 	
 	owner:DoAttackEvent( )
 	
-	local attack_end = CurTime( ) + vm:SequenceDuration( )
-	self:SetIdleAnim( attack_end )
-	self:SetAttackEndTime( attack_end )
+	self:SetIdleAnim( CurTime( ) + vm:SequenceDuration( ) )
+	self:SetAttackEndTime( CurTime( ) + attack_delay )
 	
 	if SERVER then
 		self:PlayAttackSound( )
 	end
+	
 end
 
 function SWEP:CheckHit( )
+	if CLIENT then return end
+	
 	local owner = self:GetOwner( )
 	local target = owner:GetEyeTrace( ).Entity
-	local target_distance = target:GetPos( ):Distance( owner:GetPos( ) )
 	
-	print(target_distance)
+	local target_distance = target:GetPos( ):Distance( owner:GetPos( ) )
 	
 	if not IsValid( target ) or not target:IsPlayer( ) or target_distance > attack_range then return end
 	
-	if SERVER then
-		target:TakeDamage( attack_damage, owner, self )
-		self:PlayHitSound( )
-		self:InfectTarget( target )
-	end
+	target:TakeDamage( attack_damage, owner, self )
+	self:PlayHitSound( )
+	self:InfectTarget( target )
 end
 
 function SWEP:InfectTarget( target )
