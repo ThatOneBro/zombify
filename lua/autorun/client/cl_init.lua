@@ -1,18 +1,25 @@
-local function StartZombieTremors( )
-	local function ZombieTremors( )
-		local lply = LocalPlayer( )
+local meta = FindMetaTable( "Player" )
+
+function meta:StartZombieTremors( newTeam )	
+	hook.Add( "Think", "ZombieTremors", function( )
+		local plyTeam = self:Team( )
 		local theTime = CurTime( )
 		
-		if lply:Team( ) ~= TEAM_ZOMBIE or TEAM_INFECTED or lply:GetNWFloat( "nextShakeTime" ) > theTime then return end
+		if plyTeam ~= TEAM_ZOMBIE and plyTeam ~= TEAM_INFECTED then
+			if not newTeam then self:StopZombieTremors( ) return end
+		end
+		if self:GetNWFloat( "nextShakeTime" ) > theTime then return end
 		
-		lply:SetNWFloat( "nextShakeTime", theTime + 5 )
 		util.ScreenShake( Vector( 0, 0, 0 ), 5, 10, 5, 3000 )
-	end
-	hook.Add( "Think", "ZombieTremors", ZombieTremors )
+		self:SetNWFloat( "nextShakeTime", theTime + 5 )
+	end )
 end
-usermessage.Hook( "StartZombieTremors", StartZombieTremors )
-
-local function StopZombieTremors( )
+	
+function meta:StopZombieTremors( )
 	hook.Remove( "Think", "ZombieTremors" )
 end
-usermessage.Hook( "StopZombieTremors", StopZombieTremors )
+
+net.Receive( "StopZombieTremors", function( )
+	local lply = LocalPlayer( )
+	lply:StopZombieTremors( )
+end )
