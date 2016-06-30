@@ -31,11 +31,6 @@ SWEP.Secondary.DefaultClip = -1
 SWEP.Secondary.Automatic = false
 SWEP.Secondary.Ammo = ""
 
-self:NetworkVar( "Float", 0, "IdleAnim" )
-self:NetworkVar( "Float", 0, "AttackEndTime" )
-self:NetworkVar( "Float", 1, "NextAttackAnim" )
-self:NetworkVar( "Bool", 0, "AltAnim" )
-
 local attack_sound = Sound( "npc/zombie/zo_attack1.wav" )
 local hit_sound = Sound( "npc/zombie/claw_strike2.wav" )
 local zombie_moan = Sound( "npc/zombie/zombie_pain2.wav" )
@@ -44,10 +39,17 @@ local draw_delay = 1.2
 local attack_range = 54
 local attack_damage = 10
 local attack_delay = 0.74
-local moan_delay = 5
+local moan_delay = 3
 
 function SWEP:Initialize( )
     self:SetHoldType( "fist" )
+end
+
+function SWEP:SetupDataTables( )
+	self:NetworkVar( "Float", 0, "IdleAnim" )
+	self:NetworkVar( "Float", 0, "AttackEndTime" )
+	self:NetworkVar( "Float", 1, "NextAttackAnim" )
+	self:NetworkVar( "Bool", 0, "AltAnim" )
 end
 
 function SWEP:PlayHitSound( )
@@ -58,19 +60,25 @@ function SWEP:PlayAttackSound( )
 	self:GetOwner( ):EmitSound( attack_sound )
 end
 
+--[[function SWEP:UpdateIdleAnim( )
+	local vm = self:GetOwner( ):GetViewModel( )
+	self:SetIdleAnim( CurTime( ) + vm:SequenceDuration( ) )
+end]]
+
 function SWEP:CheckIdleAnim( )
 	local idleAnim = self:GetIdleAnim( )
-	if idleAnim and idleAnim <= CurTime( ) then
-		self:SetIdleAnim( nil )
+	if idleAnim > 0 and idleAnim <= CurTime( ) then
 		self:SendWeaponAnim( ACT_VM_IDLE )
+		self:SetIdleAnim( 0 )
 	end
 end
 
 function SWEP:CheckAttackAnim( )
 	local next_attack = self:GetNextAttackAnim( )
-	if next_attack and next_attack <= CurTime( ) then
-		self:SetNextAttackAnim( nil )
+	if next_attack > 0 and next_attack <= CurTime( ) then
+		self:SetNextAttackAnim( 0 )
 		self:SendAttackAnim( )
+		self:UpdateIdleAnim( )
 	end
 end
 
@@ -93,7 +101,7 @@ end
 function SWEP:Deploy( )
 	local theTime = CurTime( )
 	self:SetIdleAnim( theTime + self:SequenceDuration( ) )
-	self:SetNextPrimaryAttack( theTime + draw_delay )
+	self:SetNextPrimaryFire( theTime + draw_delay )
 	return true
 end
 
@@ -113,7 +121,10 @@ function SWEP:Attack( )
 	self:SendAttackAnim( )
 	
 	local owner = self:GetOwner( )
+	local vm = owner:GetViewModel( )
+	
 	owner:DoAttackEvent( )
+	self:SetIdleAnim( CurTime( ) + vm:SequenceDuration( ) )
 	
 	if SERVER then
 		self:PlayAttackSound( )
@@ -156,7 +167,7 @@ function SWEP:SendAttackAnim( )
 	else
 		self:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
 	end
-	self:SetAltAnim = not altAnim
+	self:SetAltAnim( not altAnim )
 end
 
 function SWEP:SecondaryAttack( )
@@ -172,16 +183,4 @@ function SWEP:ZombieMoan( )
 	
 	self:SetNextSecondaryFire( theTime + moan_delay )
 	lply:EmitSound( zombie_moan )
-end
-
-function SWEP:Reload( )
-	local lply = self:GetOwner( )
-	if SERVER then
-		lply:setSelfDarkRPVar( "zombifyIsInfected", true )
-	end
-end
-
-function SWEP:DrawHUD( )
-	if SERVER then return end
-	self:DrawCrosshairDot( )
 end

@@ -1,9 +1,12 @@
 local function PlyFuncInit( )	
+	print( "Started!" )
 	local meta = FindMetaTable( "Player" )
 
 	function meta:AddZombieTremors( )
+		print( self )
 		net.Start( "StartZombieTremors" )
 		net.Send( self )
+		
 	end
 
 	function meta:RemoveZombieTremors( )
