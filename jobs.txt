@@ -1,0 +1,43 @@
+Add these jobs to your jobs.lua inside of the darkrpmodification/lua/darkrp_customthings folder! 
+Feel free to change the colors and models of the jobs but be careful with the special functions dealing with the job classes!
+
+TEAM_ZOMBIE = DarkRP.createJob( "Zombie", {
+    color = Color( 0, 0, 0, 255 ),
+    model = {
+        "models/player/Zombie_Classic.mdl",
+    },
+    description = [[The Zombie is a citizen that has been infected with a deadly, highly-contagious virus! 
+		Symptoms of the virus include a hungering for flesh and the inability to see clearly.]],
+    weapons = { "swep_zombie" },
+    command = "zombie",
+    max = 2,
+    salary = 0,
+    admin = 0,
+    vote = false,
+    hasLicense = false,
+    candemote = false,
+	OnPlayerChangedTeam = function( ply, oldTeam, newTeam ) ply:AddZombieTremors( ) end,
+    category = "Other"
+})
+
+TEAM_INFECTED = DarkRP.createJob( "Zombie", {
+    color = Color( 0, 0, 0, 255 ),
+    model = {
+        "models/player/Zombie_Classic.mdl",
+    },
+    description = [[The Zombie is a citizen that has been infected with a deadly, highly-contagious virus! 
+		Symptoms of the virus include a hungering for flesh and the inability to see clearly.]],
+    weapons = { "swep_zombie" },
+    command = "infected",
+    max = 0,
+    salary = 0,
+    admin = 0,
+    vote = false,
+    hasLicense = false,
+    candemote = false,
+	customCheck = function( ply ) return ply:getDarkRPVar( "zombifyIsInfected" ) end,
+	CustomCheckFailMsg = "You are not Infected!",
+	OnPlayerChangedTeam = function( ply, oldTeam, newTeam ) ply:AddZombieTremors( ) end,
+	PlayerDeath = function( ply, weapon, killer ) ply:DeZombify( ) end,
+    category = "Infected"
+})

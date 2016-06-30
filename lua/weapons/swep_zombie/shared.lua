@@ -60,11 +60,6 @@ function SWEP:PlayAttackSound( )
 	self:GetOwner( ):EmitSound( attack_sound )
 end
 
---[[function SWEP:UpdateIdleAnim( )
-	local vm = self:GetOwner( ):GetViewModel( )
-	self:SetIdleAnim( CurTime( ) + vm:SequenceDuration( ) )
-end]]
-
 function SWEP:CheckIdleAnim( )
 	local idleAnim = self:GetIdleAnim( )
 	if idleAnim > 0 and idleAnim <= CurTime( ) then
